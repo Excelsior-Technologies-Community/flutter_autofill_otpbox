@@ -37,7 +37,6 @@ In android/app/src/main/AndroidManifest.xml add:
 <uses-permission android:name="android.permission.RECEIVE_SMS" />
 <uses-permission android:name="android.permission.READ_SMS" />
 
-
 # Troubleshooting
 1. OTP not detected? - Check SMS permission
 2. Error? - Run flutter clean and flutter pub get
