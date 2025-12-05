@@ -1,39 +1,44 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Flutter AutoFill OTP Box
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+A Flutter plugin that automatically reads OTP from SMS and fills it in OTP boxes.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+# Features
+Automatic OTP read from SMS
+Works with 4, 6 digit OTP
+Beautiful UI ready
+SMS permission handling
+Manual paste support
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Installation
 
-## Features
+Add this to your `pubspec.yaml`:
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+dependencies:
+flutter_autofill_otpbox:
+path: ../flutter_autofill_otpbox  // your project path
 
-## Getting started
+# How to Use
+import this package
+import 'package:flutter_autofill_otpbox/flutter_autofill_otpbox.dart';
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+AutoFillOtpBox(
+otpLength: 6,// Works with 4,6 digit OTP
+phoneNumber: 'enter your number',
+onOtpVerified: (otp) {
+print('OTP Received: $otp');
+// Add your verification logic here
+},
+)
 
-## Usage
+# Android Setup Required
+Required the permission is enabled
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+In android/app/src/main/AndroidManifest.xml add:
+<uses-permission android:name="android.permission.RECEIVE_SMS" />
+<uses-permission android:name="android.permission.READ_SMS" />
 
-```dart
-const like = 'sample';
-```
 
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+# Troubleshooting
+1. OTP not detected? - Check SMS permission
+2. Error? - Run flutter clean and flutter pub get
+3. Not working? - App should be open when SMS arrives

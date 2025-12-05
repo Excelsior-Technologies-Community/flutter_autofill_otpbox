@@ -1,17 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_autofill_otp/flutter_autofill_otp.dart';
 import 'package:flutter_autofill_otp/src/widgets/otp_box_widget.dart';
+import 'sms_autofill_service.dart';
 
 class AutoFillOtpBox extends StatefulWidget {
   final int otpLength;
   final String? phoneNumber;
   final VoidCallback? onResendOtp;
+  final ValueChanged<String>? onOtpVerified;
+  final bool showResendButton;
+  final Duration resendTimeout;
 
   const AutoFillOtpBox({
     super.key,
     this.otpLength = 6,
     this.phoneNumber,
     this.onResendOtp,
+    this.onOtpVerified,
+    this.showResendButton = true,
+    this.resendTimeout = const Duration(seconds: 30),
   });
 
   @override
@@ -23,6 +31,9 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
   late List<FocusNode> focusNodes;
   bool _permissionGranted = false;
   bool _isLoading = true;
+  String _currentOtp = '';
+  int _resendTimer = 0;
+  bool _canResend = false;
 
   @override
   void initState() {
@@ -30,8 +41,16 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
     controllers = List.generate(widget.otpLength, (_) => TextEditingController());
     focusNodes = List.generate(widget.otpLength, (_) => FocusNode());
 
+    // Initialize SMS service
+    SmsAutoFillService.initialize();
+
     print('🎯 OTP Screen initialized (${widget.otpLength} digits)');
     _initializeSmsListener();
+
+    // Start resend timer
+    if (widget.showResendButton) {
+      _startResendTimer();
+    }
   }
 
   Future<void> _initializeSmsListener() async {
@@ -74,7 +93,9 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
       controllers[i].text = otp[i];
     }
     focusNodes.last.requestFocus();
+    _currentOtp = otp;
 
+    // Show success snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('OTP auto-filled: $otp'),
@@ -82,6 +103,13 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
         backgroundColor: Colors.green,
       ),
     );
+
+    // Callback for OTP verified
+    if (widget.onOtpVerified != null) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        widget.onOtpVerified!(otp);
+      });
+    }
   }
 
   void _showPermissionDialog() {
@@ -111,15 +139,55 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
     );
   }
 
+  void _startResendTimer() {
+    _resendTimer = widget.resendTimeout.inSeconds;
+    _canResend = false;
+
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _resendTimer--;
+      });
+
+      if (_resendTimer <= 0) {
+        _canResend = true;
+        timer.cancel();
+      }
+    });
+  }
+
   void moveNext(int index, String value) {
     if (value.isNotEmpty && index < widget.otpLength - 1) {
       focusNodes[index + 1].requestFocus();
     }
+
+    // Update current OTP
+    _updateCurrentOtp();
   }
 
   void moveBack(int index, String value) {
     if (value.isEmpty && index > 0) {
       focusNodes[index - 1].requestFocus();
+    }
+
+    // Update current OTP
+    _updateCurrentOtp();
+  }
+
+  void _updateCurrentOtp() {
+    String otp = '';
+    for (var controller in controllers) {
+      otp += controller.text;
+    }
+    _currentOtp = otp;
+
+    // Check if OTP is complete
+    if (otp.length == widget.otpLength && widget.onOtpVerified != null) {
+      widget.onOtpVerified!(otp);
     }
   }
 
@@ -139,120 +207,86 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 30),
-
-            // Title text with dynamic OTP length
-            Text(
-              'Enter ${widget.otpLength}-digit OTP',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Show phone number if provided
-            if (widget.phoneNumber != null) ...[
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              //title
               Text(
-                'Sent to ${widget.phoneNumber}',
+                widget.phoneNumber != null
+                    ? 'Enter the ${widget.otpLength}-digit code sent to\n${widget.phoneNumber}'
+                    : 'Enter the ${widget.otpLength}-digit code sent to your phone',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Colors.grey,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 8),
-            ] else ...[
-              const Text(
-                'Sent to your mobile number',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
+              const SizedBox(height: 32),
 
-            // ✅ PERMISSION STATUS - BEFORE OTP BOXES
-            Container(
-              height: 36,
-              margin: const EdgeInsets.only(bottom: 20),
-              child: Row(
+              // Permission Status
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _permissionGranted ? Icons.check_circle : Icons.info,
-                    color: _permissionGranted ? Colors.green : Colors.orange,
-                    size: 16,
+                    _permissionGranted
+                        ? Icons.check_circle
+                        : Icons.info_outline,
+                    color: _permissionGranted
+                        ? Colors.green
+                        : Colors.orange,
+                    size: 20,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
                     _permissionGranted
                         ? 'Auto-fill enabled'
-                        : 'Auto-fill requires permission',
+                        : 'Enable auto-fill for faster verification',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: _permissionGranted ? Colors.green : Colors.orange,
+                      color: _permissionGranted
+                          ? Colors.green
+                          : Colors.orange,
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
 
-            // Enable Button (if permission not granted)
-            if (!_permissionGranted) ...[
+              // OTP Boxes
               Container(
-                margin: const EdgeInsets.only(bottom: 25),
-                child: ElevatedButton.icon(
-                  onPressed: _initializeSmsListener,
-                  icon: const Icon(Icons.sms, size: 18),
-                  label: const Text(
-                    'Enable Auto-fill',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.otpLength, (index) {
+                    return Expanded(
+                      child: OtpBoxWidget(
+                        controller: controllers[index],
+                        current: focusNodes[index],
+                        next: index < widget.otpLength - 1
+                            ? focusNodes[index + 1]
+                            : null,
+                        previous: index > 0
+                            ? focusNodes[index - 1]
+                            : null,
+                        moveNext: (value, next) => moveNext(index, value),
+                        moveBack: (value, previous) => moveBack(index, value),
+                        handlePaste: handlePaste,
+                      ),
+                    );
+                  }),
                 ),
               ),
-              const SizedBox(height: 10),
+
             ],
-
-            // OTP Boxes - Dynamic based on length
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(widget.otpLength, (index) {
-                return Expanded(
-                  child: OtpBoxWidget(
-                    controller: controllers[index],
-                    current: focusNodes[index],
-                    next: index < widget.otpLength - 1 ? focusNodes[index + 1] : null,
-                    previous: index > 0 ? focusNodes[index - 1] : null,
-                    moveNext: (value, next) => moveNext(index, value),
-                    moveBack: (value, previous) => moveBack(index, value),
-                    handlePaste: handlePaste,
-                  ),
-                );
-              }),
-            ),
-
-
-          ],
+          ),
         ),
       ),
     );

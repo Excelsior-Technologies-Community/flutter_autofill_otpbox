@@ -17,7 +17,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+class MainActivity: FlutterActivity() {
 
     private val CHANNEL = "sms_retriever"
     private val SMS_PERMISSION_CODE = 101
@@ -38,11 +38,11 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        // FileLogger automatically initialize ho jayega first use pe
         fileLogger.log("🚀 configureFlutterEngine called")
 
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
 
+        // IMPORTANT: Set method call handler here
         methodChannel?.setMethodCallHandler { call, result ->
             fileLogger.log("📞 Method Called: ${call.method}")
 
@@ -92,7 +92,10 @@ class MainActivity : FlutterActivity() {
                     result.success("Listener stopped")
                 }
 
-                else -> result.notImplemented()
+                else -> {
+                    fileLogger.log("❌ Unknown method: ${call.method}")
+                    result.notImplemented()
+                }
             }
         }
 

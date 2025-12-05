@@ -1,16 +1,44 @@
-# flutter_autofill_otpbox
+# Flutter AutoFill OTP Box
 
-A new Flutter project.
+A Flutter plugin that automatically reads OTP from SMS and fills it in OTP boxes.
 
-## Getting Started
+# Features
+ Automatic OTP read from SMS
+ Works with 4, 6 digit OTP
+ Beautiful UI ready
+ SMS permission handling 
+ Manual paste support
 
-This project is a starting point for a Flutter application.
+## Installation
 
-A few resources to get you started if this is your first Flutter project:
+Add this to your `pubspec.yaml`:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+dependencies:
+  flutter_autofill_otpbox:
+    path: ../flutter_autofill_otpbox  // your project path
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# How to Use
+ import this package
+import 'package:flutter_autofill_otpbox/flutter_autofill_otpbox.dart';
+
+AutoFillOtpBox(
+otpLength: 6,// Works with 4,6 digit OTP
+phoneNumber: 'enter your number',
+onOtpVerified: (otp) {
+print('OTP Received: $otp');
+// Add your verification logic here
+   },
+ )
+
+# Android Setup Required
+Required the permission is enabled
+
+In android/app/src/main/AndroidManifest.xml add:
+<uses-permission android:name="android.permission.RECEIVE_SMS" />
+<uses-permission android:name="android.permission.READ_SMS" />
+
+
+# Troubleshooting
+1. OTP not detected? - Check SMS permission
+2. Error? - Run flutter clean and flutter pub get
+3. Not working? - App should be open when SMS arrives
