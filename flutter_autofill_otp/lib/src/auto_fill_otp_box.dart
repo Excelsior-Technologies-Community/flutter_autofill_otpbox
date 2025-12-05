@@ -6,11 +6,20 @@ import 'sms_autofill_service.dart';
 
 class AutoFillOtpBox extends StatefulWidget {
   final int otpLength;
+  final double boxHeight;           // NEW: Box height parameter
+  final double boxWidth;            // NEW: Box width parameter
+  final double boxSpacing;          // NEW: Space between boxes
+  final Color borderColor;          // NEW: Border color
+  final Color focusedBorderColor;   // NEW: Focused border color
+  final Color fillColor;            // NEW: Box fill color
+  final TextStyle? textStyle;       // NEW: Custom text style
   final String? phoneNumber;
   final VoidCallback? onResendOtp;
   final ValueChanged<String>? onOtpVerified;
   final bool showResendButton;
   final Duration resendTimeout;
+  final bool showPermissionStatus;  // NEW: Show/hide permission status
+  final bool autoFocusFirstBox;     // NEW: Auto focus first box
 
   const AutoFillOtpBox({
     super.key,
@@ -18,8 +27,17 @@ class AutoFillOtpBox extends StatefulWidget {
     this.phoneNumber,
     this.onResendOtp,
     this.onOtpVerified,
+    this.boxHeight = 60.0,          // Default height
+    this.boxWidth = 50.0,           // Default width
+    this.boxSpacing = 8.0,          // Default spacing
+    this.borderColor = Colors.grey, // Default border color
+    this.focusedBorderColor = Colors.blue, // Default focused color
+    this.fillColor = Colors.white,  // Default fill color
+    this.textStyle,                 // Optional custom text style
     this.showResendButton = true,
     this.resendTimeout = const Duration(seconds: 30),
+    this.showPermissionStatus = true, // Default show permission
+    this.autoFocusFirstBox = true,  // Default auto focus
   });
 
   @override
@@ -46,6 +64,15 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
 
     print('🎯 OTP Screen initialized (${widget.otpLength} digits)');
     _initializeSmsListener();
+
+    // Auto focus first box if enabled
+    if (widget.autoFocusFirstBox) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && focusNodes.isNotEmpty) {
+          focusNodes[0].requestFocus();
+        }
+      });
+    }
 
     // Start resend timer
     if (widget.showResendButton) {
@@ -216,7 +243,7 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              //title
+              // Title
               Text(
                 widget.phoneNumber != null
                     ? 'Enter the ${widget.otpLength}-digit code sent to\n${widget.phoneNumber}'
@@ -230,35 +257,37 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
               ),
               const SizedBox(height: 32),
 
-              // Permission Status
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _permissionGranted
-                        ? Icons.check_circle
-                        : Icons.info_outline,
-                    color: _permissionGranted
-                        ? Colors.green
-                        : Colors.orange,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _permissionGranted
-                        ? 'Auto-fill enabled'
-                        : 'Enable auto-fill for faster verification',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+              // Permission Status (optional)
+              if (widget.showPermissionStatus) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _permissionGranted
+                          ? Icons.check_circle
+                          : Icons.info_outline,
                       color: _permissionGranted
                           ? Colors.green
                           : Colors.orange,
+                      size: 20,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      _permissionGranted
+                          ? 'Auto-fill enabled'
+                          : 'Enable auto-fill for faster verification',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: _permissionGranted
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // OTP Boxes
               Container(
@@ -266,7 +295,8 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(widget.otpLength, (index) {
-                    return Expanded(
+                    return Container(
+                      margin: EdgeInsets.symmetric(horizontal: widget.boxSpacing / 2),
                       child: OtpBoxWidget(
                         controller: controllers[index],
                         current: focusNodes[index],
@@ -279,6 +309,12 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
                         moveNext: (value, next) => moveNext(index, value),
                         moveBack: (value, previous) => moveBack(index, value),
                         handlePaste: handlePaste,
+                        boxHeight: widget.boxHeight,
+                        boxWidth: widget.boxWidth,
+                        borderColor: widget.borderColor,
+                        focusedBorderColor: widget.focusedBorderColor,
+                        fillColor: widget.fillColor,
+                        textStyle: widget.textStyle,
                       ),
                     );
                   }),
