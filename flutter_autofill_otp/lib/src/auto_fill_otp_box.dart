@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_autofill_otpbox/src/auto_fill_otp_box_screen/sms_autofill_service.dart';
-import 'package:flutter_autofill_otpbox/src/auto_fill_otp_box_screen/widgets/otp_box_widgets.dart';
+import 'package:flutter_autofill_otp/flutter_autofill_otp.dart';
+import 'package:flutter_autofill_otp/src/widgets/otp_box_widget.dart';
 
 class AutoFillOtpBox extends StatefulWidget {
   final int otpLength;
@@ -139,6 +139,7 @@ class _AutoFillOtpBoxState extends State<AutoFillOtpBox> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

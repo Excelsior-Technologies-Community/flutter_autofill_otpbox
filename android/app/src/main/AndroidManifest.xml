@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+        <!-- Permissions -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+
+
+    <!-- Allow installation on devices without telephony -->
+        <uses-feature android:name="android.hardware.telephony" android:required="false"/>
+
     <application
         android:label="flutter_autofill_otpbox"
         android:name="${applicationName}"
