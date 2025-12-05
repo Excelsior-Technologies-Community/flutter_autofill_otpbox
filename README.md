@@ -1,43 +1,91 @@
-# Flutter AutoFill OTP Box
+# flutter_autofill_otpbox
 
-A Flutter plugin that automatically reads OTP from SMS and fills it in OTP boxes.
+A Flutter package for automatically reading and filling OTP from SMS.
 
-# Features
- Automatic OTP read from SMS
- Works with 4, 6 digit OTP
- Beautiful UI ready
- SMS permission handling 
- Manual paste support
+## Features
+* Automatic OTP detection from SMS
+* Beautiful OTP screen UI
+* SMS permission handling
+* Works with 4, 6 digit OTP
+* Manual paste support
+* Auto-fill notification
 
 ## Installation
 
 Add this to your `pubspec.yaml`:
 
+```yaml
 dependencies:
-  flutter_autofill_otpbox:
-    path: ../flutter_autofill_otpbox  // your project path
-
-# How to Use
- import this package
-import 'package:flutter_autofill_otpbox/flutter_autofill_otpbox.dart';
-
-AutoFillOtpBox(
-otpLength: 6,// Works with 4,6 digit OTP
-phoneNumber: 'enter your number',
-onOtpVerified: (otp) {
-print('OTP Received: $otp');
-// Add your verification logic here
-   },
- )
-
-# Android Setup Required
-Required the permission is enabled
-
-In android/app/src/main/AndroidManifest.xml add:
+  flutter_autofill_otpbox: ^1.0.0
+```
+## Android Setup
+1. Add permissions to AndroidManifest.xml
+Add these permissions to your android/app/src/main/AndroidManifest.xml:
+```
 <uses-permission android:name="android.permission.RECEIVE_SMS" />
 <uses-permission android:name="android.permission.READ_SMS" />
 
-# Troubleshooting
-1. OTP not detected? - Check SMS permission
-2. Error? - Run flutter clean and flutter pub get
-3. Not working? - App should be open when SMS arrives
+```
+2. SMS Retriever API
+No extra configuration required – handled automatically by the package.
+
+## Usage
+```
+dart
+import 'package:flutter_autofill_otpbox/flutter_autofill_otpbox.dart';
+class OtpScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AutoFillOtpBox(
+  otpLength: 6,
+  phoneNumber: '+91 9586710103',
+  onResendOtp: () {
+    print('Resend OTP clicked');
+    // Add your resend OTP logic
+  },
+  onOtpVerified: (otp) {
+    print('OTP Verified: $otp');
+    // Verify OTP with your backend
+  },
+)
+  }
+}
+```
+## Full Example
+```
+import 'package:flutter/material.dart';
+import 'package:flutter_autofill_otpbox/flutter_autofill_otpbox.dart';
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: const Text("OTP Autofill Example")),
+        body: const Center(
+          child: AutoFillOtpBox(
+            otpLength: 6,
+            boxWidth: 45,
+            boxHeight: 50,
+            borderColor: Colors.purple,
+            focusedBorderColor: Colors.deepOrange,
+            fillColor: Colors.purple[50],
+            textStyle: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.purple[800],
+            showPermissionStatus: false, // Hide permission status
+            autoFocusFirstBox: false, // Don't auto focus
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
