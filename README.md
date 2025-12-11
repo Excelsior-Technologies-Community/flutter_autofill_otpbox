@@ -10,6 +10,10 @@ A Flutter package for automatically reading and filling OTP from SMS.
 * Manual paste support
 * Auto-fill notification
 
+## ✨ Preview
+![screen-20251211-1611222](https://github.com/user-attachments/assets/22ff05a8-7e32-4be2-8c7d-4d64472af67b)
+
+
 ## Installation
 
 Add this to your `pubspec.yaml`:
