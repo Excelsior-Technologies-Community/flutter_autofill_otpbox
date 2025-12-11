@@ -1,4 +1,4 @@
-# flutter_autofill_otpbox
+# Otp Auto Fill
 
 A Flutter package for automatically reading and filling OTP from SMS.
 
